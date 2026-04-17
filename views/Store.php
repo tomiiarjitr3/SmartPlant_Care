@@ -191,7 +191,7 @@ function formatPrice($price) {
     <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center stagger-children" id="trustBar">
         <?php foreach ([
             ['🚚', 'Envío gratis', 'A todo el país'],
-            ['🛡️', 'Garantía 2 años', 'Cobertura total'],
+            ['🛡️', 'Garantía por 2 años', 'Cobertura total'],
             ['⚡', 'Setup rápido e intuitivo', 'Sin herramientas'],
             ['🔄', '30 días', 'Devolución libre'],
         ] as [$icon, $title, $sub]): ?>

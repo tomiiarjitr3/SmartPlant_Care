@@ -3,6 +3,9 @@
 //  Login.php — SmartPlant CARE
 //  Autenticación real contra MySQL con password_hash
 // ═══════════════════════════════════════════════════════════════
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Si ya está logueado, redirigir al dashboard
@@ -12,6 +15,7 @@ if (isset($_SESSION['usuario_id'])) {
 }
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 $error = null;
 $msg_forgot = null;
@@ -26,9 +30,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->bind_param("s", $email_forgot);
             $stmt->execute();
             if ($stmt->get_result()->fetch_assoc()) {
-                // Here is where PHPMailer would be used to send an email.
-                // Example: sendResetEmail($email_forgot, $token);
-                $msg_forgot = "Te enviamos un enlace de recuperación a tu correo (Simulación).";
+                // Generar un token único (En producción deberías guardar este token en la base de datos)
+                $token = bin2hex(random_bytes(32)); 
+                $reset_link = "http://localhost/SmartPlant_Care/views/ResetPassword.php?token=" . $token . "&email=" . urlencode($email_forgot);
+
+                $mail = new PHPMailer(true);
+                try {
+                    // Configuración del servidor SMTP (Ejemplo usando Gmail)
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com'; 
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'anatom071@gmail.com'; // REEMPLAZAR: Tu correo de Gmail
+                    $mail->Password   = 'easg mhwx dimr coha'; // REEMPLAZAR: Tu contraseña de aplicación de Google
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+                    $mail->CharSet    = 'UTF-8';
+
+                    // Remitente y Destinatario
+                    $mail->setFrom('tu_correo@gmail.com', 'SmartPlant CARE');
+                    $mail->addAddress($email_forgot);
+
+                    // Contenido del correo
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Recuperación de contraseña - SmartPlant CARE';
+                    $mail->Body    = "
+                        <h2>Hola,</h2>
+                        <p>Recibimos una solicitud para restablecer tu contraseña en SmartPlant CARE.</p>
+                        <p>Hacé clic en el siguiente enlace para crear una nueva:</p>
+                        <br>
+                        <a href='{$reset_link}' style='background-color:#4ade80; color:#000; padding:10px 20px; text-decoration:none; border-radius:8px; font-weight:bold;'>Restablecer Contraseña</a>
+                        <br><br>
+                        <p>Si no fuiste vos, podés ignorar este correo.</p>
+                        <p>Saludos,<br>El equipo de SmartPlant.</p>
+                    ";
+
+                    $mail->send();
+                    $msg_forgot = "Te enviamos un enlace de recuperación a tu correo.";
+                } catch (Exception $e) {
+                    $error = "El mensaje no se pudo enviar. Error: {$mail->ErrorInfo}";
+                }
             } else {
                 $error = "No existe una cuenta con ese correo.";
             }

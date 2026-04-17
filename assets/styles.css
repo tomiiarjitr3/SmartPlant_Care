@@ -35,7 +35,21 @@
        --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
        --ease-std:   cubic-bezier(0.4, 0, 0.2, 1);
    }
-   
+
+   /* Light Mode Overrides */
+   [data-theme="light"] {
+       --bg:         #f8fafc;
+       --surface:    rgba(0,0,0,0.03);
+       --border:     rgba(0,0,0,0.08);
+       --border-md:  rgba(0,0,0,0.15);
+       --border-hi:  rgba(0,0,0,0.25);
+       
+       --text:       #0f172a;
+       --text-sub:   rgba(0,0,0,0.75);
+       --text-muted: #64748b;
+       --text-dim:   #94a3b8;
+   }
+
    /* ───────────────────────────────────────────────
       RESET & BASE
    ─────────────────────────────────────────────── */

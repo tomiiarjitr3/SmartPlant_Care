@@ -20,7 +20,64 @@ require_once __DIR__ . '/../config/database.php';
 
 $db         = Database::connect();
 $usuario_id = (int) $_SESSION['usuario_id'];
-$nombre     = $_SESSION['nombre'] ?? $_SESSION['usuario'];
+
+// ── Check if table needs columns ────────────────────────────────
+$checkCols = $db->query("SHOW COLUMNS FROM usuarios LIKE 'telefono'");
+if ($checkCols && $checkCols->num_rows === 0) {
+    $db->query("ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(20) DEFAULT NULL");
+    $db->query("ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(255) DEFAULT NULL");
+}
+
+// ── Load user data ──────────────────────────────────────────────
+$stmt = $db->prepare("SELECT * FROM usuarios WHERE id = ?");
+$stmt->bind_param("i", $usuario_id);
+$stmt->execute();
+$usuario_data = $stmt->get_result()->fetch_assoc();
+
+$msg_perfil = "";
+// ── Profile update logic ────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $nuevo_telefono = trim($_POST['telefono'] ?? '');
+    $nueva_password = $_POST['password'] ?? '';
+    
+    // Upload profile photo
+    $foto_path = $usuario_data['foto_perfil'];
+    if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK) {
+        $upload_dir = __DIR__ . '/../assets/uploads/';
+        if (!is_dir($upload_dir)) @mkdir($upload_dir, 0777, true);
+        
+        $ext = strtolower(pathinfo($_FILES['foto_perfil']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            $filename = 'perfil_' . $usuario_id . '_' . time() . '.' . $ext;
+            if (move_uploaded_file($_FILES['foto_perfil']['tmp_name'], $upload_dir . $filename)) {
+                $foto_path = '/SmartPlant_Care/assets/uploads/' . $filename;
+            }
+        }
+    }
+
+    if (!empty($nueva_password)) {
+        $hashed = password_hash($nueva_password, PASSWORD_DEFAULT);
+        $stmt = $db->prepare("UPDATE usuarios SET telefono = ?, foto_perfil = ?, password = ? WHERE id = ?");
+        $stmt->bind_param("sssi", $nuevo_telefono, $foto_path, $hashed, $usuario_id);
+    } else {
+        $stmt = $db->prepare("UPDATE usuarios SET telefono = ?, foto_perfil = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $nuevo_telefono, $foto_path, $usuario_id);
+    }
+    
+    if ($stmt->execute()) {
+        $msg_perfil = "<div class='text-green-400 text-sm mb-4 bg-green-500/10 p-3 rounded-xl border border-green-500/20'>Perfil actualizado correctamente.</div>";
+        $_SESSION['foto_perfil'] = $foto_path;
+        $usuario_data['telefono'] = $nuevo_telefono;
+        $usuario_data['foto_perfil'] = $foto_path;
+    } else {
+        $msg_perfil = "<div class='text-red-400 text-sm mb-4 bg-red-500/10 p-3 rounded-xl border border-red-500/20'>Error al actualizar el perfil.</div>";
+    }
+}
+
+$_SESSION['nombre']      = $usuario_data['nombre'];
+$_SESSION['foto_perfil'] = $usuario_data['foto_perfil'] ?? '';
+$nombre                  = $_SESSION['nombre'];
+
 
 // ── 1. Obtener plantas del usuario ──────────────────────────────
 $stmt   = $db->prepare("SELECT * FROM plantas WHERE usuario_id = ? AND activa = 1 ORDER BY id ASC");
@@ -121,16 +178,31 @@ $evento_icono = [
             <span class="text-xs font-medium text-gray-400 tracking-wide">Sistema activo</span>
         </div>
         <div class="flex items-center gap-5">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-sm hover:bg-white/10 transition-all" title="Cambiar tema" id="themeToggleBtn">
+                🌙
+            </button>
             <div class="hidden md:flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-sm">👤</div>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-sm overflow-hidden">
+                    <?php if(!empty($_SESSION['foto_perfil'])): ?>
+                        <img src="<?= htmlspecialchars($_SESSION['foto_perfil']) ?>" class="w-full h-full object-cover" alt="Perfil">
+                    <?php else: ?>
+                        👤
+                    <?php endif; ?>
+                </div>
                 <div>
                     <p class="text-sm font-medium text-white/90 leading-tight"><?= htmlspecialchars($nombre) ?></p>
                     <p class="text-[10px] text-gray-500 font-light capitalize"><?= $_SESSION['plan'] ?? 'free' ?></p>
                 </div>
             </div>
-            <a href="?logout=1" class="bg-white/5 border border-white/10 text-white/70 px-5 py-2.5 rounded-full text-xs font-medium hover:bg-white/10 hover:text-white transition-all">
-                Cerrar sesión
-            </a>
+            <div class="flex items-center gap-2">
+                <button onclick="openProfileModal()" class="bg-white/5 border border-white/10 text-white/70 px-4 py-2.5 rounded-full text-xs font-medium hover:bg-white/10 hover:text-white transition-all">
+                    Perfil
+                </button>
+                <a href="?logout=1" class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2.5 rounded-full text-xs font-medium hover:bg-red-500/20 transition-all">
+                    Salir
+                </a>
+            </div>
         </div>
     </div>
 </header>
@@ -428,7 +500,97 @@ $evento_icono = [
     </div>
 </footer>
 
+<!-- ═══ MODAL PERFIL ═══ -->
+<div id="profileModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4">
+    <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl transform scale-95 transition-all duration-300" id="profileModalContent">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-semibold tracking-tight text-white">Mi Perfil</h3>
+            <button onclick="closeProfileModal()" class="text-gray-500 hover:text-white transition-colors">✕</button>
+        </div>
+
+        <?= $msg_perfil ?>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-5">
+            <input type="hidden" name="update_profile" value="1">
+            
+            <!-- Foto de perfil -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Foto de perfil</label>
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                        <?php if(!empty($usuario_data['foto_perfil'])): ?>
+                            <img src="<?= htmlspecialchars($usuario_data['foto_perfil']) ?>" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <span class="text-2xl">👤</span>
+                        <?php endif; ?>
+                    </div>
+                    <input type="file" name="foto_perfil" accept="image/*" class="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-500/10 file:text-green-400 hover:file:bg-green-500/20 transition-all cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Teléfono</label>
+                <input type="text" name="telefono" value="<?= htmlspecialchars($usuario_data['telefono'] ?? '') ?>" placeholder="+54 9 11 1234-5678" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-400 transition-colors">
+            </div>
+
+            <!-- Cambiar Contraseña -->
+            <div class="pt-2">
+                <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Cambiar Contraseña (opcional)</label>
+                <input type="password" name="password" placeholder="Nueva contraseña" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-400 transition-colors">
+                <p class="text-[10px] text-gray-500 mt-1">Dejá este campo vacío si no querés cambiar tu contraseña.</p>
+            </div>
+
+            <div class="pt-4 flex gap-3">
+                <button type="submit" class="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold rounded-xl py-3 transition-colors">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    // ─── Theme Toggle ───
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('sp_theme', next);
+        document.getElementById('themeToggleBtn').innerHTML = next === 'dark' ? '🌙' : '☀️';
+    }
+
+    // Load saved theme
+    if (localStorage.getItem('sp_theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('themeToggleBtn').innerHTML = '☀️';
+    }
+
+    // ─── Profile Modal ───
+    function openProfileModal() {
+        const modal = document.getElementById('profileModal');
+        const content = document.getElementById('profileModalContent');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('profileModal');
+        const content = document.getElementById('profileModalContent');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // Auto-open if there was a message
+    <?php if(!empty($msg_perfil)): ?>
+        setTimeout(openProfileModal, 300);
+    <?php endif; ?>
+
+    // Close on click outside
+    document.getElementById('profileModal').addEventListener('click', (e) => {
+        if(e.target === e.currentTarget) closeProfileModal();
+    });
+
     // ─── Scroll Progress ───
     window.addEventListener('scroll', () => {
         const pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;

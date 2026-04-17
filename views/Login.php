@@ -14,8 +14,29 @@ if (isset($_SESSION['usuario_id'])) {
 require_once __DIR__ . '/../config/database.php';
 
 $error = null;
+$msg_forgot = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    // ─── Forgot Password ───
+    if (isset($_POST['forgot_password'])) {
+        $email_forgot = trim($_POST['email_forgot'] ?? '');
+        if ($email_forgot) {
+            $db = Database::connect();
+            $stmt = $db->prepare("SELECT id FROM usuarios WHERE email = ? LIMIT 1");
+            $stmt->bind_param("s", $email_forgot);
+            $stmt->execute();
+            if ($stmt->get_result()->fetch_assoc()) {
+                // Here is where PHPMailer would be used to send an email.
+                // Example: sendResetEmail($email_forgot, $token);
+                $msg_forgot = "Te enviamos un enlace de recuperación a tu correo (Simulación).";
+            } else {
+                $error = "No existe una cuenta con ese correo.";
+            }
+        }
+    } 
+}
+    // ─── Login ───
+    else {
     $email    = trim($_POST["email"]    ?? "");
     $password = trim($_POST["password"] ?? "");
 
@@ -40,7 +61,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } else {
         $error = "Completá todos los campos.";
     }
-}
+    }
+
 ?>
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
@@ -148,7 +170,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <input type="checkbox" name="recordar" class="w-4 h-4 rounded accent-green-400">
                         <span class="text-gray-400 text-xs font-light">Recordarme</span>
                     </label>
-                    <a href="#" class="text-green-400/80 text-xs font-medium hover:text-green-400 transition-colors">
+                    <a href="#" onclick="event.preventDefault(); openForgotModal();" class="text-green-400/80 text-xs font-medium hover:text-green-400 transition-colors">
                         ¿Olvidaste tu contraseña?
                     </a>
                 </div>
@@ -220,6 +242,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         input.type  = show ? 'text' : 'password';
         btn.textContent = show ? '🙈' : '👁️';
     }
+
+    // Forgot Password Modal
+    function openForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+    }
+
+    function closeForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // Auto-open if there was a forgot message
+    <?php if(!empty($msg_forgot) && !isset($_POST['password'])): ?>
+        setTimeout(openForgotModal, 300);
+    <?php endif; ?>
+
+    document.getElementById('forgotModal').addEventListener('click', (e) => {
+        if(e.target === e.currentTarget) closeForgotModal();
+    });
 </script>
+
+<!-- ═══ FORGOT PASSWORD MODAL ═══ -->
+<div id="forgotModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4">
+    <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl transform scale-95 transition-all duration-300" id="forgotModalContent">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-semibold tracking-tight text-white">Recuperar contraseña</h3>
+            <button onclick="closeForgotModal()" class="text-gray-500 hover:text-white transition-colors">✕</button>
+        </div>
+
+        <?php if ($msg_forgot): ?>
+            <div class="text-green-400 text-sm mb-6 bg-green-500/10 p-4 rounded-xl border border-green-500/20">
+                <?= htmlspecialchars($msg_forgot) ?>
+            </div>
+        <?php else: ?>
+            <p class="text-gray-400 text-sm mb-6 font-light">Ingresá tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+        <?php endif; ?>
+
+        <form method="POST" class="space-y-5">
+            <input type="hidden" name="forgot_password" value="1">
+            
+            <div>
+                <label class="block text-xs text-gray-400 uppercase tracking-widest mb-2">Correo</label>
+                <input type="email" name="email_forgot" placeholder="tucorreo@smartplant.com" required class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-400 transition-colors">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full bg-green-500 hover:bg-green-400 text-black font-semibold rounded-xl py-3 transition-colors">Enviar enlace</button>
+            </div>
+        </form>
+    </div>
+</div>
 </body>
-</html>
+</html> 

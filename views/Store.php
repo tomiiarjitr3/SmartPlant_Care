@@ -4,12 +4,12 @@ $logged = isset($_SESSION['usuario_id']);
 
 $products = [
     [
-        'id'       => 'smartplant-sensor',
-        'name'     => 'SmartPlant Sensor',
+        'id'       => 'aurea-one',
+        'name'     => 'Aurea One',
         'tag'      => 'Más vendido',
         'tagColor' => 'green',
         'shortDesc'=> 'Sensor inteligente con panel solar integrado. Monitorea humedad, temperatura y luz en tiempo real.',
-        'longDesc' => 'El SmartPlant Sensor es un dispositivo compacto y resistente al agua (IP67) diseñado para vivir al aire libre. Equipado con panel solar, conectividad WiFi + Bluetooth y 5 sensores de alta precisión, te permite monitorear tus plantas 24/7 desde cualquier lugar del mundo. Su setup toma menos de 5 minutos y no requiere herramientas.',
+        'longDesc' => 'El Aurea One es un dispositivo compacto y resistente al agua (IP67) diseñado para vivir al aire libre. Equipado con panel solar, conectividad WiFi + Bluetooth y 5 sensores de alta precisión, te permite monitorear tus plantas 24/7 desde cualquier lugar del mundo. Su setup toma menos de 5 minutos y no requiere herramientas.',
         'price'    => 54990,
         'oldPrice' => 74990,
         'image'    => '/SmartPlant_Care/assets/product-device.png',
@@ -64,7 +64,7 @@ $products = [
     ],
     [
         'id'       => 'smartplant-solar',
-        'name'     => 'Panel Solar Extra',
+        'name'     => 'Panel Solar',
         'tag'      => 'Accesorio',
         'tagColor' => 'orange',
         'shortDesc'=> 'Panel solar de alta eficiencia para extender la autonomía de tu SmartPlant. Conexión USB-C.',
@@ -103,24 +103,26 @@ function formatPrice($price) {
     <title>Tienda — SmartPlant CARE</title>
     <meta name="description" content="Comprá tu SmartPlant CARE: sensores inteligentes, kits completos y accesorios para el cuidado automatizado de tus plantas.">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SDK de PayPal -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AdS73P8zK4qdxTj28HQY2mwpHH56B1462yudL4DkwlMVAO4JYZyVVELvoiU6iC7jNU-XL5X1tcVajHb6&currency=USD"></script>
     <link rel="stylesheet" href="/SmartPlant_Care/assets/styles.css">
 </head>
 
 <body class="bg-overlay text-white min-h-screen">
 
-<div class="scroll-progress" id="scrollProgress"></div>
+
 
 <!-- ═══ HEADER ═══ -->
 <header class="sticky top-6 z-50 mx-auto max-w-5xl px-4">
     <div class="glass-clean flex items-center justify-between px-10 py-5 rounded-[2.5rem]">
         <a href="/SmartPlant_Care/index.php" class="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <span class="text-green-400">🌱</span> SmartPlant
+            <span class="text-white/60">🌱</span> SmartPlant
         </a>
         <nav class="hidden md:flex gap-10 items-center text-sm font-medium text-white/80">
             <a href="/SmartPlant_Care/index.php"            class="hover:text-white transition-colors">Inicio</a>
             <a href="/SmartPlant_Care/index.php#utilidades"  class="hover:text-white transition-colors">Utilidades</a>
             <a href="/SmartPlant_Care/index.php#producto"    class="hover:text-white transition-colors">Producto</a>
-            <a href="/SmartPlant_Care/views/Store.php"       class="text-green-400 font-semibold">Tienda</a>
+            <a href="/SmartPlant_Care/views/Store.php"       class="text-white font-semibold">Tienda</a>
             <button class="cart-header-btn" onclick="toggleCart()" aria-label="Carrito">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
                 <span class="cart-badge" id="cartBadge">0</span>
@@ -136,7 +138,7 @@ function formatPrice($price) {
 
 <!-- ═══ STORE HERO ═══ -->
 <section class="flex flex-col items-center text-center pt-36 pb-16 px-6">
-    <span class="reveal-blur text-green-400 font-semibold tracking-[0.2em] text-xs uppercase mb-6">Tienda Oficial</span>
+    <span class="reveal-blur text-white/50 font-semibold tracking-[0.2em] text-xs uppercase mb-6">Tienda Oficial</span>
     <h1 class="reveal-blur text-5xl md:text-7xl font-semibold tracking-tight mb-6 leading-[1.1]">
         Equipá tu <span class="text-gradient-anim">jardín.</span>
     </h1>
@@ -275,7 +277,7 @@ function formatPrice($price) {
 
 <!-- Toast -->
 <div id="cartToast" class="store-toast" role="alert">
-    <span class="text-green-400 text-lg">✓</span>
+    <span class="text-white/70 text-lg">✓</span>
     <span id="cartToastMsg">Producto agregado al carrito</span>
 </div>
 
@@ -304,10 +306,8 @@ function formatPrice($price) {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                 Pagar con MercadoPago
             </button>
-            <button class="checkout-btn checkout-pp" onclick="checkoutPayPal()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 01-.633-.74L4.944 2.56A.759.759 0 015.69 2h5.553c3.011 0 5.1 1.607 4.578 4.878-.53 3.317-3.072 4.95-6.078 4.95H7.963l-1.108 9.17a.476.476 0 01-.468.339h-.311zm12.227-13.12c-.53 3.317-3.072 4.95-6.078 4.95h-1.658l-1.108 6.878h-2.08l2.778-17.48h5.553c1.646 0 2.96.565 3.278 1.583.215.693.116 1.473-.685 4.07z"/></svg>
-                Pagar con PayPal
-            </button>
+            <!-- Contenedor del botón oficial de PayPal -->
+            <div id="paypal-button-container" class="mt-2 w-full" style="position: relative; z-index: 1;"></div>
         </div>
         <p class="text-center text-gray-600 text-xs mt-4 font-light">Serás redirigido a la plataforma de pago segura</p>
     </div>
@@ -315,6 +315,7 @@ function formatPrice($price) {
 
 <script>
     const products = <?= json_encode($products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const isLoggedIn = <?= $logged ? 'true' : 'false' ?>;
     let currentProduct = null;
     let selectedColor = 0;
 
@@ -398,7 +399,7 @@ function formatPrice($price) {
                 <div class="cart-item-info">
                     <p class="font-semibold text-sm">${item.name}</p>
                     <p class="text-gray-500 text-xs">${item.color}</p>
-                    <p class="text-green-400 font-bold text-sm mt-1">${formatPrice(item.price)}</p>
+                    <p class="text-white/70 font-bold text-sm mt-1">${formatPrice(item.price)}</p>
                 </div>
                 <div class="cart-item-controls">
                     <button class="cart-qty-btn" onclick="updateQty('${item.key}',-1)">−</button>
@@ -421,26 +422,120 @@ function formatPrice($price) {
         document.body.style.overflow = drawer.classList.contains('cart-drawer-open') ? 'hidden' : '';
     }
 
-    // ═══════════ CHECKOUT ═══════════
-    function checkoutMercadoPago() {
-        const cart = getCart();
-        if (!cart.length) return;
-        // En producción: llamar a tu backend para crear preferencia de pago
-        // Ejemplo: window.location.href = '/SmartPlant_Care/controllers/CheckoutController.php?method=mp';
-        showToast('Redirigiendo a MercadoPago…');
+    function ensureLoggedInForCheckout() {
+        if (isLoggedIn) return true;
+        showToast('Inicia sesion para registrar tu compra');
         setTimeout(() => {
-            window.open('https://www.mercadopago.com.ar', '_blank');
-        }, 800);
+            window.location.href = '/SmartPlant_Care/views/Login.php';
+        }, 1200);
+        return false;
     }
 
-    function checkoutPayPal() {
+    async function registrarCompra(payload) {
+        const cart = payload.cart || getCart();
+        const montoTotal = payload.monto_total ?? cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+        const res = await fetch('/SmartPlant_Care/controllers/purchase_controller.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create',
+                metodo_pago: payload.metodo_pago,
+                estado: payload.estado,
+                moneda: payload.moneda || 'ARS',
+                referencia_externa: payload.referencia_externa || '',
+                fecha_pago: payload.fecha_pago || new Date().toISOString(),
+                notas: payload.notas || '',
+                monto_total: montoTotal,
+                cart
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            throw new Error(data.error || 'No se pudo registrar la compra');
+        }
+
+        return data;
+    }
+
+    // ═══════════ CHECKOUT ═══════════
+    async function checkoutMercadoPago() {
+        if (!ensureLoggedInForCheckout()) return;
+
         const cart = getCart();
         if (!cart.length) return;
-        // En producción: crear orden PayPal via API
-        showToast('Redirigiendo a PayPal…');
-        setTimeout(() => {
-            window.open('https://www.paypal.com', '_blank');
-        }, 800);
+
+        try {
+            await registrarCompra({
+                metodo_pago: 'mercadopago',
+                estado: 'pendiente',
+                moneda: 'ARS',
+                referencia_externa: 'MP-PENDING-' + Date.now(),
+                notas: 'Compra pendiente generada desde la tienda antes de redirigir a Mercado Pago'
+            });
+
+            showToast('Compra pendiente registrada. Redirigiendo a MercadoPago…');
+            setTimeout(() => {
+                window.open('https://www.mercadopago.com.ar', '_blank');
+            }, 800);
+        } catch (error) {
+            console.error(error);
+            showToast('No se pudo registrar la compra en la base de datos');
+        }
+    }
+
+    // ═══════════ INTEGRACIÓN PAYPAL ═══════════
+    if (typeof paypal !== 'undefined') {
+        if (!isLoggedIn) {
+            document.getElementById('paypal-button-container').innerHTML =
+                '<p class="text-center text-xs text-gray-500 font-light">Inicia sesion para habilitar el pago y guardar la compra.</p>';
+        } else {
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    const cart = getCart();
+                    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                value: total.toString()
+                            }
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(async function(details) {
+                        try {
+                            const totalPagado = Number(details.purchase_units?.[0]?.amount?.value || 0);
+                            const payerName = details.payer?.name?.given_name || 'cliente';
+
+                            await registrarCompra({
+                                metodo_pago: 'paypal',
+                                estado: 'aprobado',
+                                moneda: 'USD',
+                                referencia_externa: data.orderID || details.id || '',
+                                fecha_pago: new Date().toISOString(),
+                                notas: 'Pago aprobado por PayPal para ' + payerName,
+                                monto_total: totalPagado
+                            });
+
+                            showToast('Pago completado por ' + payerName);
+                            localStorage.removeItem('sp_cart');
+                            renderCart();
+                            toggleCart();
+                        } catch (error) {
+                            console.error(error);
+                            showToast('El pago se aprobó, pero no se pudo guardar la compra');
+                        }
+                    });
+                },
+                onError: function(err) {
+                    console.error('PayPal Error:', err);
+                    showToast('Error al procesar el pago de PayPal');
+                }
+            }).render('#paypal-button-container');
+        }
     }
 
     function buyNow() {
@@ -537,10 +632,7 @@ function formatPrice($price) {
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') { closeModal(); const d = document.getElementById('cartDrawer'); if (d.classList.contains('cart-drawer-open')) toggleCart(); }
     });
-    window.addEventListener('scroll', () => {
-        const pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-        document.getElementById('scrollProgress').style.width = pct + '%';
-    });
+    // Scroll progress removed
     const obs = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
     }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
